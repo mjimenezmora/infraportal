@@ -1,0 +1,108 @@
+class Servidores_Virtuales(models.Model):
+    #relacion de Muchos a Muchos
+    HIPERVIZORES = (('Hyper-V','Hyper-V'),('Vmware','Vmware'))
+    Hipervizor = models.CharField(max_length=10, choices=HIPERVIZORES, default='Vmware', null=False)
+    # Cualidades del servidor.
+    Nombre = models.CharField(max_length=124, null = False, unique=True)
+    O_SISTEMAS = (('Microsoft Windows Server 2012 R2 Data Center','W S 2012 R2'),('Microsoft Windows Server 2012','W S 2012'),('Microsoft Windows Server 2008','W S 2008 R2'),
+                  ('Microsoft Windows Server 2008 R2','W S 2008 R2'),('Microsoft Windows Server 2003 (32 Bits)','W S 2003'),
+                  ('Microsoft Windows XP Professional','W XP'),('Microsoft Windows 7 (32 Bits)','W 7-32'), ('Microsoft Windows 7 (64 Bits)','W 7-64'),
+                  ('Microsoft Windows 8 (64 Bits)','W 8-64'),('Centos (64-bits)','Centos'),('Ubuntu (64 Bits)','Ubuntu'),
+                  ('Debian GNU/Linux (32 Bits)','Debian 32 Bits'),('Debian GNU/Linux (64 Bits)','Debian 64 Bits'),('OpenSuse 64 Bits','OpenSuse'),
+                  ('Suse Linux (64 Bits)','Suse linux'),('Free BSD (32 Bits)','FreeBSD'),('GuestOS','GuestOS'),
+                  ('Other Linux 32 Bits','Linux 32 Bits'),('Other Linux 64 Bits','Linux 64'),
+                  ('Red Hat Enterprise 5 64 Bits','Red Hat Enterprise 5'),('Red Hat Enterprise 6 64 Bits','Red Hat Enterprise 6'))
+    O_S = models.CharField(max_length=120, choices=O_SISTEMAS, default="W S 2012 R2"  ,null = False)
+    A_cargo = models.CharField(max_length=30, null = True, blank=True)
+    SEDES = (('Plaza','Plaza'), ('Poussin','Poussin'), ('Bufalo','Bufalo'), ('Madrid','Madrid'))
+    Sede = models.CharField(max_length=20, choices=SEDES, default='Plaza', null=False)
+    Servicio = models.CharField(max_length=100, null = True, blank=True)
+    IP_int = models.GenericIPAddressField(default='10.1.1.1', null=True, blank=True)
+    IP_ext = models.GenericIPAddressField(default='10.1.1.1',null=True, blank=True)
+    DNS_int = models.CharField(max_length=200, null = True, blank=True)
+    DNS_ext = models.CharField(max_length=200, null = True, blank=True)
+    Puertos_int = models.CharField(max_length=100, null = True, blank=True)
+    Puertos_ext = models.CharField(max_length=100, null = True, blank=True)
+    MAC_addres = models.CharField(max_length=15, null = True, blank=True)
+    #Cualidades Fisicas
+    CPU = models.IntegerField(null=True, blank=True)
+    Memoria_RAM = models.IntegerField(null=True, blank=True)
+    Almacenamiento = models.IntegerField(null=True, blank=True)
+    Descripcion = models. TextField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Servidor Virtual'
+        verbose_name_plural = 'Servidores Virtuales'
+        ordering = ['Hipervizor']
+
+    def Caracteristicas_Server(self):
+        cadena = '{0}, {1}, {2}'
+        return cadena.format(self.Nombre, self.IP_int, self.Hipervizor)
+
+    def __str__(self):
+        return self.Caracteristicas_Server()
+
+class Servidores_Fisicos(models.Model):
+    
+    Service_TAG = models.CharField(max_length=10, unique=True)
+    # Caracteristicas del Servidor.
+    Nombre = models.CharField(max_length=124, null = False, unique=True)
+    O_SISTEMAS = (('Microsoft Windows Server 2012 R2 Data Center','W S 2012 R2'),('Microsoft Windows Server 2012','W S 2012'),('Microsoft Windows Server 2008','W S 2008 R2'),
+                  ('Microsoft Windows Server 2008 R2','W S 2008 R2'),('Microsoft Windows Server 2003 (32 Bits)','W S 2003'),
+                  ('Microsoft Windows XP Professional','W XP'),('Microsoft Windows 7 (32 Bits)','W 7-32'), ('Microsoft Windows 7 (64 Bits)','W 7-64'),
+                  ('Microsoft Windows 8 (64 Bits)','W 8-64'),('Centos (64-bits)','Centos'),('Ubuntu (64 Bits)','Ubuntu'),
+                  ('Debian GNU/Linux (32 Bits)','Debian 32 Bits'),('Debian GNU/Linux (64 Bits)','Debian 64 Bits'),('OpenSuse 64 Bits','OpenSuse'),
+                  ('Suse Linux (64 Bits)','Suse linux'),('Free BSD (32 Bits)','FreeBSD'),('GuestOS','GuestOS'),
+                  ('Other Linux 32 Bits','Linux 32 Bits'),('Other Linux 64 Bits','Linux 64'),
+                  ('Red Hat Enterprise 5 64 Bits','Red Hat Enterprise 5'),('Red Hat Enterprise 6 64 Bits','Red Hat Enterprise 6'))
+    O_S = models.CharField(max_length=120, choices=O_SISTEMAS, default="W S 2012 R2", null = False)
+    A_cargo = models.CharField(max_length=30, null = True, blank=True)
+    SEDES = (('Plaza','Plaza'), ('Poussin','Poussin'), ('Bufalo','Bufalo'), ('Madrid','Madrid'))
+    Sede = models.CharField(max_length=20, choices=SEDES, default='Plaza', null=False)
+    Servicio = models.CharField(max_length=100, null = True, blank=True)
+    IP_int = models.GenericIPAddressField(default='10.1.1.1',null=True ,blank=True)
+    IP_ext = models.GenericIPAddressField(default='10.1.1.1',null=True ,blank=True)
+    DNS_int = models.CharField(max_length=100, null = True, blank=True)
+    DNS_ext = models.CharField(max_length=100, null = True, blank=True)
+    Puertos_int = models.CharField(max_length=200, null = True, blank=True)
+    Puertos_ext = models.CharField(max_length=200, null = True, blank=True)
+    MAC_addres = models.CharField(max_length=15, null = True, blank=True)
+    #Cualidades Fisicas
+    CPU = models.IntegerField(null=True, blank=True)
+    Memoria_RAM = models.IntegerField(null=True, blank=True)
+    Almacenamiento = models.IntegerField(null=True, blank=True)
+    Descripcion = models. TextField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Servidor Fisico'
+        verbose_name_plural = 'Servidores Fisicos'
+        ordering = ['Service_TAG']
+
+    def Caracteristicas_Server(self):
+        cadena = '{0}, {1}, {2}'
+        return cadena.format(self.Nombre, self.IP_int, self.Service_TAG)
+
+    def __str__(self):
+        return self.Caracteristicas_Server()
+
+class usuariointerno(models.Model):
+    nombre_interno = models.CharField(max_length=50, null=True, verbose_name="Nombre de pila del usuario")
+    nombre_usuario = models.CharField(max_length=15, null=False)
+    password_usuario = models.CharField(max_length=10, null=False)
+    roles = (('Redes','Redes'),('Proyectos','Proyectos'),('Masters','Infraestructura'))
+    rol = models.CharField(max_length=16, choices=roles, null=False)
+
+    def __str__(self):
+        return self.nombre_usuario
+
+
+
+class contacto(models.Model):
+    nombre = models.CharField(max_length=50)
+    correo = models.EmailField()
+    opciones_consulta = ((0, "Consulta"), (1, "Reclamo"), (2, "Sugerencia"), (3, "Felicitacion"))
+    tipos_consulta = models.IntegerField(choices=opciones_consulta)
+    mensaje = models.TextField()
+
+    def __str__(self):
+        return self.nombre

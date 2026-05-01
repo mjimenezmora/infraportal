@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | STIC{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="fw-bold" style="color: var(--dark-blue);">Bienvenido al Panel de Gestión</h2>
+        <p class="text-muted">Selecciona el módulo con el que deseas trabajar hoy.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <a href="{% url 'lista_virtuales' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm dashboard-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box mb-3">
+                        <i class="bi bi-cloud-haze2-fill fs-1 text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Servidores Virtuales</h5>
+                    <p class="card-text text-muted small">Gestión de máquinas virtuales e instancias.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <!-- <a href="{% url 'lista_fisicos' %}" class="text-decoration-none"> -->
+            <div class="card h-100 border-0 shadow-sm dashboard-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box mb-3">
+                        <i class="bi bi-server fs-1 text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Servidores Físicos</h5>
+                    <p class="card-text text-muted small">Inventario de hardware y racks físicos.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <a href="{% url 'generar_password' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm dashboard-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box mb-3">
+                        <i class="bi bi-shield-lock-fill fs-1 text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Passwords</h5>
+                    <p class="card-text text-muted small">Herramienta de generación de claves seguras.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!---  Div de Lista de IPs --->
+    <div class="col-md-6 col-lg-3">
+        <a href="{% url 'lista_ip' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm dashboard-card">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box mb-3">
+                        <i class="bi bi-geo-fill fs-1 text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Direcciones IP</h5>
+                    <p class="card-text text-muted small">Consulta de segmentos e IPs libres.</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<style>
+    .dashboard-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 15px !important;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 20px rgba(0, 123, 255, 0.15) !important;
+        cursor: pointer;
+    }
+
+    .icon-box {
+        height: 80px;
+        width: 80px;
+        background-color: #f0f7ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        transition: background-color 0.3s ease;
+    }
+
+    .dashboard-card:hover .icon-box {
+        background-color: var(--primary-blue);
+    }
+
+    .dashboard-card:hover i {
+        color: white !important;
+    }
+</style>
+{% endblock %}

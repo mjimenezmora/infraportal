@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Subir archivo CSV</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+<div class="mb-3">
+    <input type="file" name="archivo" class="form-control" required>
+</div>
+<button type="submit" class="btn btn-primary">
+    Subir archivo CSV
+</buttton>
+</form>
+{% if mensaje %}
+<div class="alert alert-success mt-3">
+    {{ mensaje }}
+</div>
+{% endif %}
+
+</div>
+
+{% endblock %}

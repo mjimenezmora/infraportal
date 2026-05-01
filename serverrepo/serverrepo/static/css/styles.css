@@ -1,0 +1,121 @@
+/* --- Variables Globales (Sincronizadas con tu base.html) --- */
+:root {
+    --primary-blue: #D4A373;  /* Dorado/Arena */
+    --dark-blue: #611232;     /* Guinda/Marrón oscuro */
+    --accent-cyan: #00d4ff;   /* Cyan de realce */
+    --light-bg: #f4f7f9;      /* Fondo gris azulado claro */
+    --white: #ffffff;
+}
+
+/* --- Estilos Base --- */
+body {
+    background-color: var(--light-bg);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #333;
+}
+
+/* --- Navbar Personalizada --- */
+.navbar-custom {
+    background-color: var(--dark-blue) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.nav-link:hover {
+    color: var(--accent-cyan) !important;
+}
+
+.nav-link.active {
+    border-bottom: 2px solid var(--accent-cyan);
+}
+
+/* --- Contenedor Principal --- */
+.main-content {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    min-height: 80vh;
+}
+
+/* --- Mapa de IPs (Grid Dinámico) --- */
+.ip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.ip-card {
+    transition: all 0.25s ease-in-out;
+    border: none !important;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.ip-card:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    z-index: 5;
+}
+
+/* Estados de IP */
+.bg-disponible {
+    background-color: #28a745 !important; /* Verde estándar */
+    color: white;
+}
+
+.bg-ocupado {
+    background-color: #dc3545 !important; /* Rojo estándar */
+    color: white;
+}
+
+/* --- Panel de Detalles --- */
+#panel-detalle {
+    border-left: 1px solid #eee;
+    padding-left: 25px;
+}
+
+.detail-card {
+    border-top: 4px solid var(--dark-blue);
+    background: #fdfdfd;
+}
+
+/* --- Botones --- */
+.btn-primary {
+    background-color: var(--primary-blue) !important;
+    border-color: var(--primary-blue) !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--dark-blue) !important;
+    filter: brightness(1.1);
+}
+
+.btn-outline-primary {
+    color: var(--dark-blue) !important;
+    border-color: var(--dark-blue) !important;
+}
+
+.btn-outline-primary:hover, .btn-outline-primary.active {
+    background-color: var(--dark-blue) !important;
+    color: white !important;
+}
+
+/* --- Footer --- */
+footer {
+    padding: 25px 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+
+
+
+

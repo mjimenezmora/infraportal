@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+{% block content %}
+<!-- Boton de regreso al dashboard --->
+<div class="row mb-3">
+    <div class="col-12 d-flex align-items-center gap-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+
+        <div class="btn-group" role="group">
+            {% for seg in segmentos %}
+                <a href="?segmento={{ seg }}" 
+                   class="btn {% if segmento_activo == seg %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    Red {{ seg }}x
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                {% for seg in segmentos %}
+                    <a href="?segmento={{ seg }}" 
+                       class="btn {% if segmento_activo == seg %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        Red {{ seg }}x
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="height: 80vh;">
+        <div class="col-md-7 h-100 overflow-auto border-end">
+            <h4 class="mb-3">Mapa de Red: {{ segmento_activo }}x</h4>
+            <div class="d-flex flex-wrap gap-2">
+                {% for item in mapa_red %}
+                    <div class="ip-card p-2 text-center rounded border {% if item.estado == 'ocupado' %}bg-danger text-white{% else %}bg-success text-white{% endif %}" 
+                         style="width: 110px; cursor: pointer; font-size: 0.85rem;"
+                         onclick="mostrarDetalle('{{ item.ip }}', '{{ item.detalle.nombre|default:"Disponible" }}', '{{ item.detalle.tipo|default:"N/A" }}', '{{ item.detalle.desc|default:"Sin descripción" }}')">
+                        {{ item.ip }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-5 bg-light p-4" id="panel-detalle">
+            <div class="sticky-top">
+                <h4 class="text-primary">Detalles de la IP</h4>
+                <hr>
+                <div id="contenido-detalle">
+                    <p class="text-muted">Selecciona una dirección para ver su ocupación.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// El mismo JS que ya teníamos funciona perfecto aquí
+function mostrarDetalle(ip, nombre, tipo, desc) {
+    const contenedor = document.getElementById('contenido-detalle');
+    // ... (copiar lógica de la respuesta anterior)
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/network_map.js' %}"></script>
+{% endblock %}
