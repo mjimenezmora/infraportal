@@ -1,0 +1,153 @@
+{% extends 'inventario/dashboard.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        
+        <div class="col-12 col-md-5">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-shield-plus me-2"></i>{{ titulo }}</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" autocomplete="off">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold text-secondary mb-2">
+                                <i class="bi bi-check2-square me-1"></i>{{ form.credencial_existente.label }}
+                            </label>
+                            <div class="p-2 bg-white rounded border" style="max-height: 200px; overflow-y: auto;">
+                                {% for checkbox in form.credencial_existente %}
+                                    <div class="form-check mb-2">
+                                        {{ checkbox.tag }}
+                                        <label class="form-check-label text-dark small" for="{{ checkbox.id_for_label }}">
+                                            {{ checkbox.choice_label }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text text-muted mt-1">Marca todas las casillas de los administradores que deseas asociar.</div>
+                        </div>
+
+                        <hr class="my-4 text-muted">
+                        <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.8rem; letter-spacing: 1px;">O crear nueva credencial desde cero</h6>
+
+                        <div class="contenedor-descripcion-centrada">
+                            <label class="form-label fw-bold">Tipo de Acceso</label>
+                            {{ form.tipo_acceso }}
+                        </div>
+                        <div class="row">
+                            <div class="col-8 mb-3">
+                                <label class="form-label fw-bold">Usuario</label>
+                                {{ form.usuario }}
+                            </div>
+                            <div class="col-4 mb-3">
+                                <label class="form-label fw-bold">Puerto</label>
+                                {{ form.puerto }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contraseña</label>
+                            {{ form.password }}
+                        </div>
+                        <div class="w-100">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-chat-left-text me-1"></i>Descripción / Propósito
+                            </label>
+                            <div class="w-100">
+                            {{ form.descripcion }}
+                            </div>
+                        </div>
+
+                        <div class="row g-2 pt-2">
+                            <div class="col-8">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success btn-lg py-2 fw-bold fs-6">
+                                        <i class="bi bi-save me-2"></i>{{ boton_texto }}
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="d-grid">
+                                    {% if tipo_servidor == 'virtual' %}
+                                    <a href="{% url 'detalle_virtual' servidor.id %}" class="btn btn-warning btn-lg py-2 fw-bold fs-6 text-dark">
+                                        <i class="bi bi-arrow-left-circle me-1"></i> Volver
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'detalle_fisico' servidor.id %}" class="btn btn-warning btn-lg py-2 fw-bold fs-6 text-dark">
+                                        <i class="bi bi-arrow-left-circle me-1"></i> Volver
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-7">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="bi bi-folder2-open me-2"></i>Llavero Central de Administradores</h5>
+                    <span class="badge bg-secondary">{{ credenciales_existentes.count }} Registradas</span>
+                </div>
+                <div class="card-body p-4" style="max-height: 680px; overflow-y: auto;">
+                    {% if credenciales_existentes %}
+                        <div class="row g-3">
+                            {% for cred in credenciales_existentes %}
+                                <div class="col-12">
+                                    <div class="card border-start border-4 border-info shadow-none bg-light h-100 mb-2">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div>
+                                                    <h6 class="mb-1 fw-bold text-dark">
+                                                        <i class="bi bi-person-badge-fill text-secondary me-2"></i>{{ cred.usuario }}
+                                                    </h6>
+                                                    <span class="badge bg-primary text-uppercase">{{ cred.get_tipo_acceso_display }}</span>
+                                                    {% if cred.puerto %}
+                                                        <span class="badge bg-secondary">Puerto: {{ cred.puerto }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-light text-dark border">
+                                                        <i class="bi bi-server me-1"></i> {{ cred.servidor_virtual.count|add:cred.servidor_fisico.count }} Servidor(es)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mt-2 pt-2 border-top border-2 border-white">
+                                                <p class="mb-1 text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Propósito / Tipo de Administrador:</p>
+                                                <p class="card-text text-dark bg-white p-2 rounded border small mb-0" style="font-family: monospace; white-space: pre-wrap;">
+                                                    {% if cred.descripcion %}
+                                                        {{ cred.descripcion }}
+                                                    {% else %}
+                                                        <span class="text-muted italic">Sin descripción asignada.</span>
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-shield-slash display-4"></i>
+                            <p class="mt-3 mb-0">No hay credenciales registradas aún en el sistema.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

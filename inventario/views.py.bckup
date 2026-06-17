@@ -7,23 +7,16 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 import csv
 import io
-# ==========================================
-# SECCIÓN: DASHBOARD Y UTILERÍAS
-# ==========================================
+# Create your views here.
+
+
+# las rutas del dashboard
 @login_required
 def dashboard(request):
-    '''
-    Renderiza la página principal del panel de control.
-    Protegido con @login_required para asegurar que solo usuarios autenticados entren.
-    '''
     return render(request, 'inventario/dashboard.html')
 
 
 def generar_password(request):
-    """
-    Herramienta administrativa para la generación de contraseñas seguras (Criptografía fuerte).
-    Utiliza la librería 'secrets' de Python en lugar de 'random' para evitar patrones predecibles.
-    """
     import secrets
     import string
 
@@ -51,15 +44,10 @@ def generar_password(request):
         'form': form,
         'passwords': lista_passwords
     })
-# ==========================================
-# SECCIÓN: GESTIÓN DE DIRECCIONES IP (MAPA DE RED)
-# ==========================================
+
 @login_required
 def lista_ip(request):
-    """
-    Mapea dinámicamente un segmento de red clase C (.1 a .254) e identifica
-    cuáles IPs están asignadas a servidores físicos o virtuales, y cuáles están libres.
-    """
+    # Definimos el rango del segmento.
     segmentos_validos = ["10.1.238.", "10.1.239.", "10.1.240.", "10.1.241."] # nuestros segmentos validos de IPs
 
     # 2. Obtenemos el segmento seleccionado (por defecto el primero de la lista)
@@ -101,16 +89,10 @@ def lista_ip(request):
         })
 
 # Servidores Virtuales
-# ==========================================
-# SECCIÓN: SERVIDORES VIRTUALES (CRUD)
-# ==========================================
 
 @login_required
 def lista_virtuales(request):
-    """
-    Muestra el inventario de servidores virtuales permitiendo búsquedas cruzadas
-    y filtros avanzados por Sedes, Hipervisores y Sistemas Operativos.
-    """
+
     #  Dfinimos el Query inicial
     servidores = ServidorVirtual.objects.all()
 
@@ -146,16 +128,13 @@ def lista_virtuales(request):
             "os": os,
         }
     }
+
+    
     return render(request, "inventario/lista_virtuales.html", context)
 
 # Detalles de virtuales
 
 def detalle_virtual(request,pk):
-    """
-    Muestra la ficha técnica completa de un servidor virtual y sus credenciales de acceso.
-    ¡CORREGIDO!: Se eliminó el bucle for que intentaba reescribir 'cred.password_plana'
-    y causaba el AttributeError.
-    """
     # Obtenemos el servidor o lanzamos un error 404 si no existe
     servidor=get_object_or_404(ServidorVirtual, pk=pk)
 
@@ -163,12 +142,12 @@ def detalle_virtual(request,pk):
     credenciales = servidor.credenciales.all()
     
     # Desencriptamos las contraseñas para que el admin las vea
-    #for cred in credenciales:
-        #try:
+    for cred in credenciales:
+        try:
             # Las desencriptamos
-            #cred.password_plana = desencripta_password(cred.password)
-        #except:
-            #cred.password_plana = "Error al desencriptar"
+            cred.password_plana = desencripta_password(cred.password)
+        except:
+            cred.password_plana = "Error al desencriptar"
 
     # Aqui podrias cargar informacion adicional, por ejemplo, los servicios asociados
     # Servicios = servicios.servicios.all()
@@ -176,18 +155,14 @@ def detalle_virtual(request,pk):
     context = {
         'servidor': servidor,
         'credenciales': credenciales,
-        'es_admin': request.user.groups.filter(name="Administradores").exists() or request.user.is_superuser
+        'es_admin': request.user.groups.filter(name="Administradores").exists()
     }
     return render(request, 'inventario/detalle_virtual.html', context)
 
 
 @login_required
 def agregar_credencial(request, tipo_servidor, pk):
-    """
-    Controlador adaptado para el esquema relacional Muchos a Muchos (ManyToManyField).
-    Permite tanto reciclar una credencial existente como crear una nueva desde cero,
-    enlazando de forma segura la relación sin duplicar registros.
-    """
+    # Buscamos el servidor en la Base de Datos
     servidor = None
     if tipo_servidor == 'virtual':
         servidor = get_object_or_404(ServidorVirtual, pk=pk)
@@ -195,54 +170,40 @@ def agregar_credencial(request, tipo_servidor, pk):
         servidor = get_object_or_404(ServidorFisico, pk=pk)
 
     if request.method == 'POST':
-        form = CredencialForm(request.POST)      
+        # form = CredencialForm(request.POST)
+        # hacemos copia de los datos enviados por el usuario
+        datos_completos = request.POST.copy()
+        if tipo_servidor == 'virtual':
+            datos_completos['servidor_virtual'] = servidor.id
+        else:
+            datos_completos['servidor_fisico'] = servidor.id
+
+        form = CredencialForm(datos_completos)      
+        
+        # 4.- Ahora, al validar, clean() y save() verán el servidor asignado correctamente
+        # estas son las validaciones de la informacion
         if form.is_valid():
-            # Ahora esto es una LISTA de credenciales seleccionadas
-            credenciales_elegidas = form.cleaned_data.get('credencial_existente')
-            
-            # CASO A: El usuario seleccionó una o más credenciales existentes
-            if credenciales_elegidas:
-                for credencial in credenciales_elegidas: # Iteramos el llavero
-                    if tipo_servidor == 'virtual':
-                        credencial.servidor_virtual.add(servidor)
-                    else:
-                        credencial.servidor_fisico.add(servidor)
-                
-            # CASO B: El usuario decidió crear una credencial nueva desde cero
-            else:
-                credencial = form.save(commit=False)
-                if not form.cleaned_data.get('usuario') or not form.cleaned_data.get('password'):
-                    form.add_error(None, "Debe seleccionar al menos una credencial existente o rellenar los datos para una nueva.")
-                    return render(request, 'inventario/form_credentials.html', {
-                        'form': form, 'titulo': f"Agregar Credencial para {servidor.nombre}", 'boton_texto': "Guardar Credencial",
-                        'credenciales_existentes': CredencialServidor.objects.all()
-                    })
-                
-                credencial.save()
-                if tipo_servidor == 'virtual':
-                    credencial.servidor_virtual.add(servidor)
-                else:
-                    credencial.servidor_fisico.add(servidor)
-            
+            form.save()
             nombre_url = 'detalle_virtual' if tipo_servidor == 'virtual' else 'detalle_fisico'
             return redirect(nombre_url, pk=pk)
     else:
-        form = CredencialForm()
-        
-    return render(request, 'inventario/form_credenciales.html', {
+        # Al cargar la página en limpio, pre-poblamos los campos ocultos
+        datos_iniciales = {}
+        if tipo_servidor == 'virtual':
+            datos_iniciales['servidor_virtual'] = servidor.id
+        else:
+            datos_iniciales['servidor_fisico'] = servidor.id
+            
+        form = CredencialForm(initial=datos_iniciales)
+    return render(request, 'inventario/form_general.html', {
         'form': form,
         'titulo': f"Agregar Credencial para {servidor.nombre}",
-        'boton_texto': "Guardar Credencial",
-        'credenciales_existentes': CredencialServidor.objects.all(),
-        'servidor': servidor,          # <--- VITAL
-        'tipo_servidor': tipo_servidor,
+        'boton_texto': "Guardar Credencial"
     })
+
 
 @login_required
 def agregar_virtual(request):
-    """
-    Crea un nuevo servidor virtual en el inventario.
-    """
     if request.method == "POST":
         form = ServidorVirtualForm(request.POST)
         if form.is_valid():
@@ -254,10 +215,6 @@ def agregar_virtual(request):
 
 @login_required
 def editar_virtual(request, id):
-    """
-    Modifica la información técnica de un servidor existente.
-    Implementa un middleware manual de seguridad a nivel de función para impedir accesos no autorizados.
-    """
     # Verificación de seguridad a nivel de servidor
     if not request.user.groups.filter(name="Administradores").exists() and not request.user.is_superuser:
         return redirect("lista_virtuales")
@@ -276,9 +233,7 @@ def editar_virtual(request, id):
 
 @login_required
 def eliminar_virtual(request, id):
-    """
-    Elimina permanentemente un servidor de la infraestructura (Solo Administradores).
-    """
+
     if not request.user.groups.filter(name="Administradores").exists():
         return redirect("lista_virtuales")
 
@@ -288,125 +243,15 @@ def eliminar_virtual(request, id):
 
     return redirect("lista_virtuales")
 
-# ==========================================================================
-# SECCIÓN: SERVIDORES FÍSICOS - BARE METAL (CRUD)
-# ==========================================================================
+# Servidores Fisicos
 
 @login_required
 def lista_fisicos(request):
-    """
-    Muestra el inventario de servidores físicos (Bare Metal) con soporte
-    para búsquedas avanzadas y filtros cruzados por Sedes y Sistemas Operativos.
-    """
-    # Definimos el QuerySet inicial
-    servidores = ServidorFisico.objects.all()
-
-    # Validación de permisos para renderizado de botones administrativos
-    es_admin = request.user.groups.filter(name="Administradores").exists() or request.user.is_superuser
-
-    # Captura de parámetros GET para filtros desde el frontend
-    sede = request.GET.get("sede")
-    os = request.GET.get("os")
-
-    if sede:
-        servidores = servidores.filter(sede__id=sede)
-
-    if os:
-        servidores = servidores.filter(sistema_operativo__id=os)
-
-    context = {
-        "servidores": servidores,
-        "es_admin": es_admin,
-        "filtros": {
-            "sede": sede,
-            "os": os,
-        }
-    }
-    return render(request, "inventario/lista_fisicos.html", context)
-
-
-@login_required
-def detalle_fisico(request, pk):
-    """
-    Muestra la ficha técnica detallada de un servidor físico (hardware, ubicación, red)
-    así como el llavero de credenciales y accesos asociados a este equipo.
-    """
-    # Obtenemos la máquina física o disparamos un 404 seguro si no existe
-    servidor = get_object_or_404(ServidorFisico, pk=pk)
-
-    # Recuperamos las credenciales vinculadas mediante la relación Muchos a Muchos
-    credenciales = servidor.credenciales.all()
-
-    context = {
-        'servidor': servidor,
-        'credenciales': credenciales,
-        'es_admin': request.user.groups.filter(name="Administradores").exists() or request.user.is_superuser
-    }
-    return render(request, 'inventario/detalle_fisico.html', context)
-
-
-@login_required
-def agregar_fisico(request):
-    """
-    Controlador para dar de alta un nuevo servidor físico (Bare Metal) en el inventario.
-    """
-    if request.method == "POST":
-        form = ServidorFisicoForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("lista_fisicos")
-    else:
-        form = ServidorFisicoForm()
-    return render(request, "inventario/form_fisico.html", {"form": form})
-
-
-@login_required
-def editar_fisico(request, id):
-    """
-    Modifica la información técnica o de infraestructura de un servidor físico existente.
-    Incluye protección explícita para evitar accesos no autorizados a nivel de vista.
-    """
-    # Middleware manual de seguridad por función
-    if not request.user.groups.filter(name="Administradores").exists() and not request.user.is_superuser:
-        return redirect("lista_fisicos")
-
-    servidor = get_object_or_404(ServidorFisico, id=id)
-    
-    if request.method == "POST":
-        form = ServidorFisicoForm(request.POST, instance=servidor)
-        if form.is_valid():
-            form.save()
-            return redirect("lista_fisicos")
-    else:
-        form = ServidorFisicoForm(instance=servidor)
-        
-    return render(request, "inventario/form_fisico.html", {"form": form})
-
-
-@login_required
-def eliminar_fisico(request, id):
-    """
-    Elimina permanentemente una máquina física del inventario (Operación exclusiva de administradores).
-    """
-    if not request.user.groups.filter(name="Administradores").exists() and not request.user.is_superuser:
-        return redirect("lista_fisicos")
-
-    servidor = get_object_or_404(ServidorFisico, id=id)
-    servidor.delete()
-
-    return redirect("lista_fisicos")
-
-# ==========================================================================
-# SECCIÓN: SUBIR CSV - LLENAR LA BD MEDIANTE UN CSV
-# ==========================================================================
+    return render(request, 'lista_fisicos.html')
 
 # Para subir el CSV
 @login_required
 def subir_csv(request):
-    """
-    Procesador por lotes (BULK IMPORT) para cargar servidores masivamente desde archivos CSV.
-    Ejecuta una lógica tipo UPSERT (Actualiza si existe, Crea si no existe).
-    """
     if request.method == "POST":
         archivo = request.FILES.get('archivo')
         # Valdiacion de entrada, --- Muy IMPORTANTE
@@ -506,15 +351,9 @@ def subir_csv(request):
     # Si el método es GET, simplemente mostramos la página de carga
     return render(request, 'inventario/upload_csv.html')
 
-# ==========================================================================
-# SECCIÓN: AGREGAR SO - EN PAGINA DE SERVIDORES VIRTUALES
-# ==========================================================================
-
+# Vamos a agregar la seccon del formulario de Sistemas operativos.
 @login_required
 def agregar_so(request):
-    """
-    Permite el alta rápida de nuevos Sistemas Operativos en el catálogo.
-    """
     if not request.user.groups.filter(name="Administradores").exists():
         return redirect('lista_virtuales')
     if request.method == "POST":
@@ -525,27 +364,6 @@ def agregar_so(request):
     else:
         form = SistemaOperativoForm()
     return render(request, 'inventario/form_general.html', {'form':form, 'titulo':'Agregar Sistema Operativo'})
-
-# ==========================================================================
-# SECCIÓN: DESVINCULAR CREDENCIAL - EN PAGINA DE SERVIDORES VIRTUALES
-# ==========================================================================
-
-@login_required
-def desvincular_credencial(request, tipo_servidor, servidor_pk, credencial_pk):
-    """
-    Rompe la relación Muchos a Muchos entre un servidor específico y una credencial,
-    dejando intacta la credencial en la base de datos para otros servidores.
-    """
-    credencial = get_object_or_404(CredencialServidor, pk=credencial_pk)
-    
-    if tipo_servidor == 'virtual':
-        servidor = get_object_or_404(ServidorVirtual, pk=servidor_pk)
-        credencial.servidor_virtual.remove(servidor) # Rompe la unión en la tabla pívot
-        return redirect('detalle_virtual', pk=servidor_pk)
-    else:
-        servidor = get_object_or_404(ServidorFisico, pk=servidor_pk)
-        credencial.servidor_fisico.remove(servidor) # Rompe la unión en la tabla pívot
-        return redirect('detalle_fisico', pk=servidor_pk)
 
 """
 # Version vieja del codigo, borrar en futuro.

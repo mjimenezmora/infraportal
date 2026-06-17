@@ -1,0 +1,296 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import *
+from .forms import *
+from .utils import encriptar_password
+from django.db.models import Q
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+import csv
+import io
+# Create your views here.
+
+
+# las rutas del dashboard
+@login_required
+def dashboard(request):
+    return render(request, 'inventario/dashboard.html')
+
+
+def generar_password(request):
+    import secrets
+    import string
+
+    lista_passwords = []
+    form = PasswordGen()
+
+    if request.method == 'POST':
+        form = PasswordGen(request.POST)
+        if form.is_valid():
+            no_contra = form.cleaned_data['numero']
+            lon_contra = form.cleaned_data['longitud']
+            out_caracter = form.cleaned_data['caracter'] or ""
+
+            # Definimos el set de caracteres (letras + números + puntuación común)
+            # Evitamos usar todo string.printable porque incluye espacios y saltos de línea
+            caracteres_base = string.ascii_letters + string.digits + string.punctuation
+            full_caracter = "".join([c for c in caracteres_base if c not in out_caracter])
+
+            for _ in range(no_contra):
+                # Generamos una contraseña usando secrets para alta seguridad
+                passw = "".join(secrets.choice(full_caracter) for _ in range(lon_contra))
+                lista_passwords.append(passw)
+
+    return render(request, 'inventario/passwgen/password_gen.html', {
+        'form': form,
+        'passwords': lista_passwords
+    })
+
+@login_required
+def lista_ip(request):
+    # Definimos el rango del segmento.
+    segmentos_validos = ["10.1.238.", "10.1.239.", "10.1.240.", "10.1.241."] # nuestros segmentos validos de IPs
+
+    # 2. Obtenemos el segmento seleccionado (por defecto el primero de la lista)
+
+    prefijo = request.GET.get('segmento')
+    if prefijo not in segmentos_validos:
+        prefijo = segmentos_validos[0]
+
+    # El rago de las IPs van de .1 a .254        
+    rango_ips = range(1,255)
+    
+
+    # 3. Traemos datos NOTA: Filtramos en la BD por el prefijo para no traer miles de registros 
+    ips_fisicas=ServidorFisico.objects.filter(ip_int__startswith=prefijo).values('ip_int', 'nombre', 'descripcion')
+    ips_virtuales=ServidorVirtual.objects.filter(ip_int__startswith=prefijo).values('ip_int', 'nombre', 'descripcion')
+
+    ocupadas={}
+    for s in ips_fisicas:
+        ocupadas[s['ip_int']]={'nombre':s['nombre'], 'tipo':'Fisico', 'desc': s['descripcion']}
+    for s in ips_virtuales:
+        ocupadas[s['ip_int']]={'nombre':s['nombre'], 'tipo':'Fisico', 'desc': s['descripcion']}
+
+    # 4. Construimos la lista final para el template
+
+    mapa_red = []
+    for i in rango_ips:
+        ip_completa = f"{prefijo}{i}"
+        info = ocupadas.get(ip_completa)
+        mapa_red.append({
+            'ip':ip_completa,
+            'estado': 'ocupado' if info else 'libre',
+            'detalle': info
+        })
+
+    return render(request, 'inventario/ip/ips.html', {
+        'mapa_red': mapa_red,
+        'segmentos':segmentos_validos,
+        "segmentos_activo":prefijo
+        })
+
+# Servidores Virtuales
+
+@login_required
+def lista_virtuales(request):
+
+    servidores = ServidorVirtual.objects.all()
+    es_admin = ServidorVirtual.objects.all()
+
+    es_admin = request.user.groups.filter(name="Administradores").exists()
+
+    context = {
+        "servidores": servidores,
+        "es_admin": es_admin
+    }
+
+
+    sede = request.GET.get("sede")
+    hipervisor = request.GET.get("hipervisor")
+    os = request.GET.get("os")
+
+    if sede:
+        servidores = servidores.filter(Sede=sede)
+
+    if hipervisor:
+        servidores = servidores.filter(Hipervizor=hipervisor)
+
+    if os:
+        servidores = servidores.filter(O_S=os)
+
+    return render(request, "inventario/lista_virtuales.html", {
+        "servidores": servidores
+    })
+
+@login_required
+def agregar_virtual(request):
+    if request.method == "POST":
+        form = ServidorVirtualForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("lista_virtuales")
+    else:
+        form = ServidorVirtualForm()
+    return render(request, "inventario/form_virtual.html", {"form": form})
+
+@login_required
+def editar_virtual(request, id):
+    servidor = get_object_or_404(ServidorVirtual, id=id)
+    if request.method == "POST":
+        form = ServidorVirtualForm(request.POST, instance=servidor)
+        if form.is_valid():
+            form.save()
+            return redirect("lista_virtuales")
+    else:
+        form = ServidorVirtualForm(instance=servidor)
+    return render(request, "inventario/form_virtual.html", {"form": form})
+
+@login_required
+def eliminar_virtual(request, id):
+
+    if not request.user.groups.filter(name="Administradores").exists():
+        return redirect("lista_virtuales")
+
+    servidor = ServidorVirtual.objects.get(id=id)
+
+    servidor.delete()
+
+    return redirect("lista_virtuales")
+
+# Servidores Fisicos
+
+@login_required
+def lista_fisicos(request):
+    return render(request, 'lista_fisicos.html')
+
+# Para subir el CSV
+@login_required
+def subir_csv(request):
+    if request.method == "POST":
+        archivo = request.FILES.get('archivo')
+        # Valdiacion de entrada, --- Muy IMPORTANTE
+        if not archivo:
+            return render(request, 'inventario/upload_csv.html', {
+                'mensaje': 'No se seleccionó archivo, elige un archivo tipo CSV'
+            })
+        
+        # Inicializacion de variables
+        cont_creados = 0
+        cont_actualizados = 0
+        errores = []
+
+        try:
+            # Manejo del ENCODING (UTF-8 y latin-1 para Excel)
+            data = archivo.read()
+            try:
+                decoded_file = data.decode('utf-8')
+            except UnicodeDecodeError:
+                decoded_file = data.decode('latin-1')
+
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+
+            # Procesamiento por fila
+            # Usamos un contador manual para reporar la fila exacta, esto nos obliga a fuituro usar una plantilla
+
+            fila_actual = 2
+
+            for row in reader:
+                try:
+                    nombre_srv = row['nombre'].strip()
+                    
+                    # Búsqueda de relaciones (ForeignKeys)
+                    sede = Sede.objects.filter(nombre=row['sede'].strip()).first()
+                    hiper = Hipervisor.objects.filter(nombre=row['hipervisor'].strip()).first()
+                    so = SistemaOperativo.objects.filter(nombre=row['sistema_operativo'].strip()).first()
+
+                    # Validación de dependencias críticas, llenadas en otras tablas.
+                    if not all([sede, hiper, so]):
+                        faltantes = []
+                        if not sede: faltantes.append(f"Sede '{row['sede']}'")
+                        if not hiper: faltantes.append(f"Hipervisor '{row['hipervisor']}'")
+                        if not so: faltantes.append(f"SO '{row['sistema_operativo']}'")
+                        errores.append(f"Fila {fila_actual}: No se encontró {', '.join(faltantes)} en la base de datos.")
+                        fila_actual += 1
+                        continue
+
+                    # LÓGICA DE ACTUALIZACIÓN O CREACIÓN (UPSERT)
+                    obj, created = ServidorVirtual.objects.update_or_create(
+                        nombre=nombre_srv, # Identificador único
+                        defaults={
+                            'ip_int': row['ip_int'].strip(),
+                            'ip_ext': row.get('ip_ext', '').strip() or None,
+                            'dns_int': row.get('dns_int', '').strip(),
+                            'dns_ext': row.get('dns_ext', '').strip(),
+                            'puertos_int': row.get('puertos_int', '').strip(),
+                            'puertos_ext': row.get('puertos_ext', '').strip(),
+                            'mac_addres': row.get('mac_addres', '').strip(),
+                            'cpu': row['cpu'],
+                            'memoria_ram': row['memoria_ram'],
+                            'almacenamiento': row.get('almacenamiento', 0),
+                            'descripcion': row.get('descripcion', '').strip(),
+                            'sede': sede,
+                            'hipervisor': hiper,
+                            'sistema_operativo': so,
+                        }
+                    )
+
+                    if created:
+                        cont_creados += 1
+                    else:
+                        cont_actualizados += 1
+
+                except KeyError as e:
+                    errores.append(f"Fila {fila_actual}: Falta la columna obligatoria {str(e)}")
+                except Exception as e:
+                    errores.append(f"Fila {fila_actual}: Error inesperado: {str(e)}")
+                
+                fila_actual += 1
+
+            # RESULTADO FINAL
+            resumen = f"Proceso finalizado. Servidores creados: {cont_creados}. Servidores actualizados: {cont_actualizados}."
+            if errores:
+                resumen += f" Se detectaron {len(errores)} errores."
+
+            return render(request, 'inventario/upload_csv.html', {
+                'mensaje': resumen,
+                'errores': errores[:10]  # Mostramos solo los primeros 10 errores para no saturar
+            })
+
+        except Exception as e:
+            return render(request, 'inventario/upload_csv.html', {
+                'mensaje': f'Error Crítico al procesar el archivo: {str(e)}'
+            })
+
+    # Si el método es GET, simplemente mostramos la página de carga
+    return render(request, 'inventario/upload_csv.html')
+
+"""
+# Version vieja del codigo, borrar en futuro.
+                # Crear servidor
+                ServidorVirtual.objects.create(
+                    nombre=row['nombre'],
+                    ip_int=row['ip_int'],
+                    cpu=row['cpu'],
+                    memoria_ram=row['memoria_ram'],
+                    almacenamiento=row.get('almacenamiento', 0),
+                    sede=sede,
+                    hipervisor=hipervisor,
+                    sistema_operativo=sistema
+                )
+
+            return render(request, 'inventario/upload_csv.html', {
+                'mensaje': 'Archivo cargado correctamente'
+            })
+
+        except Exception as e:
+            return render(request, 'inventario/upload_csv.html', {
+                'mensaje': f'Error: {str(e)}'
+            })
+
+    return render(request, 'inventario/upload_csv.html')
+    #equipos = Servidores_Virtuales.objects.all()
+    #context = {
+    #    "Servidores Vituales": Servidores_Virtuales
+    #}
+    #return render(request, "inventario/lista_equipos.html", context) #por que funciono?
+"""

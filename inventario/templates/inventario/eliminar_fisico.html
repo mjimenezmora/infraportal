@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Eliminar servidor</h3>
+
+<p>¿Seguro que deseas eliminar <strong>{{ obj }}</strong>?</p>
+
+<form method="POST">
+
+{% csrf_token %}
+
+<button class="btn btn-danger">
+
+Eliminar
+
+</button>
+
+<a href="{% url 'lista_virtuales' %}"
+class="btn btn-secondary">
+
+Cancelar
+
+</a>
+
+</form>
+
+{% endblock %}

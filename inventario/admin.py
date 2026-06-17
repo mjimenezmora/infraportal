@@ -51,7 +51,7 @@ class ServidoresVirtualesAdmin(admin.ModelAdmin):
 
     list_per_page = 40
 
-    inlines=[CredencialInline]
+    #inlines=[CredencialInline]
 
     # Template
     change_list_template = "admin/csv_upload.html"
@@ -104,7 +104,26 @@ class ServidoresVirtualesAdmin(admin.ModelAdmin):
     #def save_model(self, request, obj, form, change):
     #    obj.save()
         
+# ¡Esto es lo que te creará el menú para poder gestionar y borrar todo de raíz!
+###########################################################################
+@admin.register(CredencialServidor)
+class CredencialServidorAdmin(admin.ModelAdmin):
+    # CORREGIDO (E109): Sustituimos los campos ManyToMany por métodos personalizados que devuelven un conteo o texto
+    list_display = ('usuario', 'tipo_acceso', 'puerto', 'total_servidores_virtuales', 'total_servidores_fisicos')
+    list_filter = ('tipo_acceso',)
+    search_fields = ('usuario', 'descripcion')
 
+    # Métodos calculados para mostrar información en las columnas sin saturar la base de datos
+    def total_servidores_virtuales(self, obj):
+        return f"{obj.servidor_virtual.count()} máquina(s)"
+    total_servidores_virtuales.short_description = 'Servidores Virtuales' # Nombre de la columna
+
+    def total_servidores_fisicos(self, obj):
+        return f"{obj.servidor_físico.count()} máquina(s)"
+    total_servidores_fisicos.short_description = 'Servidores Físicos' # Nombre de la columna
+
+# Demás Rubros del Inventario
+#############################
 @admin.register(ServidorFisico)
 class ServidoresFisicosAdmin(admin.ModelAdmin):
 

@@ -115,6 +115,42 @@ footer {
     color: #6c757d;
 }
 
+/* ==========================================================================
+   Sección Especial: Ajustes de Caja y Alineación de Credenciales
+   ========================================================================== */
+
+/* 1. Contenedor para centrar el bloque completo de la descripción en el formulario */
+.contenedor-descripcion-centrada {
+    display: flex;
+    flex-column: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+/* 2. Reducción y estilizado de la caja de texto (área de texto de la descripción) */
+.caja-descripcion-reducida {
+    max-width: 75% !important; /* Reduce el ancho al 75% de la tarjeta */
+    margin: 0 auto !important; /* Asegura el centrado matemático horizontal */
+    text-align: center !important; /* Centra el texto o placeholder que se escribe dentro */
+    resize: none; /* Evita que los administradores deformen la tarjeta estirando la caja */
+    border-radius: 8px !important;
+}
+
+/* 3. Centrado estricto para las celdas de descripciones de notas en la tabla de detalles */
+.celda-notas-centrada {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.texto-notas-tabla {
+    display: inline-block;
+    max-width: 250px; /* Evita que notas gigantes deformen el ancho horizontal de la tabla */
+    text-wrap: wrap;
+    text-align: center;
+}
+
 
 
 

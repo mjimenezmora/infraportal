@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    {# NAVEGACIÓN #}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'lista_virtuales' %}">Inventario</a></li>
+            <li class="breadcrumb-item active">{{ servidor.nombre }}</li>
+        </ol>
+    </nav>
+
+    {# FICHA PRINCIPAL #}
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Ficha Técnica: {{ servidor.nombre }}</h3>
+            <span class="badge bg-info text-dark fs-6">{{ servidor.ip_int }}</span>
+        </div>
+        
+        <div class="card-body">
+            {# FILA 1: HARDWARE Y UBICACIÓN #}
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-cpu"></i> Especificaciones de Hardware</h5>
+                    <hr>
+                    <p><strong>Procesador:</strong> {{ servidor.cpu }} vCPUs</p>
+                    <p><strong>Memoria RAM:</strong> {{ servidor.memoria_ram }} GB</p>
+                    <p><strong>Sistema Operativo:</strong> {{ servidor.sistema_operativo }}</p>
+                    <p><strong>MAC Address:</strong> <code>{{ servidor.mac_addres }}</code></p>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="bi bi-geo-alt"></i> Ubicación y Red</h5>
+                    <hr>
+                    <p><strong>Sede:</strong> {{ servidor.sede }}</p>
+                    <p><strong>Hipervisor:</strong> {{ servidor.hipervisor }}</p>
+                    <p><strong>IP Externa:</strong> {{ servidor.ip_ext|default:"N/A" }}</p>
+                    <p><strong>Responsable:</strong> {{ servidor.a_cargo }}</p>
+                </div>
+            </div>
+            
+            {# FILA 2: DESCRIPCIÓN #}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h5><i class="bi bi-card-text"></i> Descripción del Servicio</h5>
+                    <hr>
+                    <div class="bg-light p-3 border rounded">
+                        {{ servidor.descripcion|linebreaks|default:"Sin descripción técnica adicional." }}
+                    </div>
+                </div>
+            </div>
+
+            {# FILA 3: CREDENCIALES (NUEVA SECCIÓN FUSIONADA) #}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5><i class="bi bi-key"></i> Accesos y Credenciales</h5>
+                        {% if es_admin %}
+                        <a href="{% url 'agregar_credencial' 'virtual' servidor.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-lg"></i> Gestionar
+                        </a>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    
+                    {% if credenciales %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover border">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tipo Acceso</th>
+                                        <th>Usuario</th>
+                                        <th>Password</th>
+                                        <th>Puerto</th>
+                                        <th>Notas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cred in credenciales %}
+                                    <tr>
+                                        <td class="align-middle">
+                                            <span class="badge bg-secondary">{{ cred.get_tipo_acceso_display }}</span>
+                                        </td>
+                                        <td class="align-middle"><code>{{ cred.usuario }}</code></td>
+                                        <td class="align-middle">
+                                            <div class="input-group input-group-sm mx-auto" style="max-width: 200px;">
+                                                <input type="password" class="form-control border-0 bg-transparent text-center" 
+                                                value="{{ cred.password_plana }}" id="pass_{{ cred.id }}" readonly>
+                                            <button class="btn btn-sm btn-link text-decoration-none" type="button" 
+                                            onclick="togglePass('{{ cred.id }}')">
+                                                <i class="bi bi-eye" id="icon_{{ cred.id }}"></i>
+                                            </button>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">{{ cred.puerto|default:"Default" }}</td>
+                                        <td class="celda-notas-centrada">
+                                            <small class="text-muted">{{ cred.descripcion }}</small>
+                                         </td>
+                                        {% if es_admin %}
+                                        <td class="align-middle">
+                                            <a href="{% url 'desvincular_credencial' tipo_servidor='virtual' servidor_pk=servidor.id credencial_pk=cred.id %}" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            onclick="return confirm('¿Estás seguro de que deseas quitar el acceso de esta credencial a este servidor?');">
+                                                <i class="bi bi-link-45deg"></i> Desvincular
+                                            </a>
+                                        </td>
+                                        {% endif %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-light border text-center">
+                            <i class="bi bi-exclamation-circle"></i> No hay credenciales registradas para este servidor.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# FOOTER DE ACCIONES #}
+        <div class="card-footer text-end bg-light">
+            {% if es_admin %}
+                <a href="{% url 'editar_virtual' servidor.id %}" class="btn btn-warning">
+                    <i class="bi bi-pencil-square"></i> Editar Datos
+                </a>
+            {% endif %}
+            <a href="{% url 'lista_virtuales' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Listado
+            </a>
+        </div>
+    </div>
+</div>
+
+{# SCRIPT PARA REVELAR CONTRASEÑAS #}
+<script>
+function togglePass(id) {
+    const input = document.getElementById('pass_' + id);
+    const icon = document.getElementById('icon_' + id);
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        input.type = "password";
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+    }
+}
+</script>
+{% endblock %}

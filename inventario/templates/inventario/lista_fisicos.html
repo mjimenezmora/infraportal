@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="container-fluid mt-3">
-    <h1>Inventario de Servidores Virtuales</h1>
+    <h1>Inventario de Servidores Fisicos</h1>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Listado General</h2>
@@ -27,7 +27,7 @@
     <div class="d-flex justify-content-between mb-3">
         <div>
             {% if es_admin %}
-                <a href="{% url 'agregar_virtual' %}" class="btn btn-success">
+                <a href="{% url 'agregar_fisico' %}" class="btn btn-success">
                     <i class="bi bi-server"></i> Agregar Servidor
                 </a>
                 <a href="{% url 'subir_csv' %}" class="btn btn-info">
@@ -65,7 +65,7 @@
             <tr>
                 <td>{{ forloop.counter }}</td>
                 <td>
-                    <a href="{% url 'detalle_virtual' srv.id %}" class="text-decoration-none fw-bold text-primary">
+                    <a href="{% url 'detalle_fisico' srv.id %}" class="text-decoration-none fw-bold text-primary">
                         <i class="bi bi-info-square me-1"></i> {{ srv.nombre }}
                     </a>
                 </td>
@@ -79,10 +79,10 @@
                     <td>{{ srv.cpu }} vCPU / {{ srv.memoria_ram }}GB</td>
                     <td>
                         <div class="btn-group">
-                            <a href="{% url 'editar_virtual' srv.id %}" class="btn btn-sm btn-outline-primary">
+                            <a href="{% url 'editar_fisico' srv.id %}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a href="{% url 'eliminar_virtual' srv.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar servidor?')">
+                            <a href="{% url 'eliminar_fisico' srv.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar servidor?')">
                                 <i class="bi bi-trash"></i>
                             </a>
                         </div>

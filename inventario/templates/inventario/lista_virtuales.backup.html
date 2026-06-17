@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Inventario de Servidores Virtuales</h1>
+
+<div class="d-flex justify-content-between mb-3">
+
+<h2>Inventario de Servidores Virtuales</h2>
+
+{% if es_admin %}
+
+<a href="{% url 'agregar_virtual' %}" class="btn btn-success">
+Agregar Servidor
+</a>
+
+<a href="{% url 'subir_csv' %}" class="btn btn-info mb-3">
+Subir archivo CSV
+</a>
+
+{% endif %}
+
+</div>
+
+<form method="GET" class="row mb-3">
+
+<div class="col-md-4">
+
+<input type="text" name="q" class="form-control"
+placeholder="Buscar servidor..."
+value="{{ query|default:'' }}">
+
+</div>
+
+<div class="col">
+
+<button class="btn btn-primary">Buscar</button>
+
+</div>
+
+</form>
+
+<table class="table table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>No.</th>
+            <th>Nombre</th>
+            <th>Sistema Operativo</th>
+            <th>Responsable</th>
+            <th>IP Interna</th>
+
+            {# VISTA EXCLUSIVA PARA ADMINISTRADORES #}
+            {% if es_admin %}
+                <th>IP Externa</th>
+                <th>Sede</th>
+                <th>Hipervisor</th>
+                <th>MAC Address</th>
+                <th>Recursos (CPU/RAM)</th>
+                <th>Acciones</th>
+            {% endif %}
+
+            <th>Descripción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for srv in servidores %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><strong>{{ srv.nombre }}</strong></td>
+            <td>{{ srv.sistema_operativo }}</td>
+            <td><code>{{ srv.a_cargo }}</code></td>
+            <td><code>{{ srv.ip_int }}</code></td>
+
+            {% if es_admin %}
+                <td>{{ srv.ip_ext|default:"-" }}</td>
+                <td>{{ srv.sede }}</td>
+                <td>{{ srv.hipervisor }}</td>
+                <td><small>{{ srv.mac_addres }}</small></td>
+                <td>{{ srv.cpu }} vCPU / {{ srv.memoria_ram }}GB</td>
+                
+                {# BOTONES DE EDICIÓN PARA ADMINISTRADORES #}
+                <td>
+                    <a href="{% url 'editar_virtual' srv.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'eliminar_virtual' srv.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar servidor?')">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </td>
+            {% endif %}
+
+            <td>{{ srv.descripcion|truncatechars:20 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<nav>
+
+<ul class="pagination">
+
+{% if servidores.has_previous %}
+
+<li class="page-item">
+
+<a class="page-link"
+href="?page={{ servidores.previous_page_number }}">
+
+Anterior
+
+</a>
+
+</li>
+
+{% endif %}
+
+<li class="page-item active">
+
+<span class="page-link">
+
+Página {{ servidores.number }} de {{ servidores.paginator.num_pages }}
+
+</span>
+
+</li>
+
+{% if servidores.has_next %}
+
+<li class="page-item">
+
+<a class="page-link"
+href="?page={{ servidores.next_page_number }}">
+
+Siguiente
+
+</a>
+
+</li>
+
+{% endif %}
+
+</ul>
+
+</nav>
+
+{% endblock %}
