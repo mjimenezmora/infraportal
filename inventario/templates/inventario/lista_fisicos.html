@@ -3,15 +3,21 @@
 {% block content %}
 
 <div class="container-fluid mt-3">
-    <h1>Inventario de Servidores Fisicos</h1>
+   {# BOTÓN DE REGRESO AL DASHBOARD #}
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Regresar
+        </a>
+        <h1 class="mb-0">Inventario de Servidores Fisicos</h1>
+    </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Listado General</h2>
         
         <div class="btn-group">
             {# BOTÓN PARA CAMBIAR DE VISTA #}
-            <a href="{% url 'lista_fisicos' %}" class="btn btn-outline-dark">
-                <i class="bi bi-cpu"></i> Servidores Físicos
+            <a href="{% url 'lista_virtuales' %}" class="btn btn-outline-dark">
+                <i class="bi bi-cpu"></i> Servidores Virtuales
             </a>
 
             {% if es_admin %}

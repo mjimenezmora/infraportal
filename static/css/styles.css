@@ -122,7 +122,7 @@ footer {
 /* 1. Contenedor para centrar el bloque completo de la descripción en el formulario */
 .contenedor-descripcion-centrada {
     display: flex;
-    flex-column: column;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
@@ -151,7 +151,45 @@ footer {
     text-align: center;
 }
 
+/* ==========================================================================
+   Módulo: Dashboard (Panel de Control)
+   ========================================================================== */
+.dashboard-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 15px !important;
+}
 
+.dashboard-card:hover {
+    transform: translateY(-10px);
+    /* Sombra elegante usando transparencia basada en tu color institucional guinda */
+    box-shadow: 0 10px 20px rgba(97, 18, 50, 0.15) !important;
+    cursor: pointer;
+}
 
+.icon-box {
+    height: 80px;
+    width: 80px;
+    /* Fondo claro sutil guinda para sustituir el azul por defecto */
+    background-color: #fcedf2; 
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    transition: background-color 0.3s ease;
+}
 
+.icon-box i {
+    color: var(--dark-blue); /* Control unificado del color del icono */
+    transition: color 0.3s ease;
+}
+
+/* Interacciones Hover en cascada */
+.dashboard-card:hover .icon-box {
+    background-color: var(--primary-blue); /* Pasa a dorado al hacer hover */
+}
+
+.dashboard-card:hover i {
+    color: var(--white) !important;
+}
 

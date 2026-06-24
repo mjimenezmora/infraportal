@@ -307,12 +307,21 @@ def lista_fisicos(request):
     # Captura de parámetros GET para filtros desde el frontend
     sede = request.GET.get("sede")
     os = request.GET.get("os")
+    q = request.GET.get("q") # Parametros de la barra de busqueda
 
+    # Aplicacion de los filtros de catalogo
     if sede:
         servidores = servidores.filter(sede__id=sede)
 
     if os:
         servidores = servidores.filter(sistema_operativo__id=os)
+    # Logica de bsuqeuda avanzada
+    if q:
+        servidores = servidores.filter(
+            Q(nombre__icontains=q) |
+            Q(ip_int__icontains=q) |
+            Q(descripcion__icontains=q)
+        )
 
     context = {
         "servidores": servidores,

@@ -77,8 +77,8 @@
                             </div>
                             <div class="col-4">
                                 <div class="d-grid">
-                                    {% if tipo_servidor == 'virtual' %}
-                                    <a href="{% url 'detalle_virtual' servidor.id %}" class="btn btn-warning btn-lg py-2 fw-bold fs-6 text-dark">
+                                    {% if tipo_servidor == 'fisico' %}
+                                    <a href="{% url 'detalle_fisico' servidor.id %}" class="btn btn-warning btn-lg py-2 fw-bold fs-6 text-dark">
                                         <i class="bi bi-arrow-left-circle me-1"></i> Volver
                                     </a>
                                     {% else %}
